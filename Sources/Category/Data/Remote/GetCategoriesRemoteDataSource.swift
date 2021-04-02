@@ -1,0 +1,40 @@
+//
+//  File.swift
+//  
+//
+//  Created by addin on 30/03/21.
+//
+
+import Common
+import Combine
+import Alamofire
+import Foundation
+
+public struct GetCategoriesRemoteDataSource: RemoteDataSource {
+  
+  public typealias Request = Any
+  public typealias Response = [CategoryResponse]
+  
+  private let _endpoint: String
+  
+  public init(endpoint: String) {
+    _endpoint = endpoint
+  }
+  
+  public func execute(request: Any?) -> AnyPublisher<[CategoryResponse], Error> {
+    return Future<[CategoryResponse], Error> { completion in
+      if let url = URL(string: _endpoint) {
+        AF.request(url)
+          .validate()
+          .responseDecodable(of: CategoriesResponse.self) { response in
+            switch response.result {
+            case .success(let value):
+              completion(.success(value.categories))
+            case .failure:
+              completion(.failure(URLError.invalidResponse))
+            }
+          }
+      }
+    }.eraseToAnyPublisher()
+  }
+}
